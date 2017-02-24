@@ -44,6 +44,25 @@ Currently you need an already created CA (certificate and key) to run most endpo
 
 ```bash
 $ ./sslapi.py
+ * Running on http://0.0.0.0:8888/ (Press CTRL+C to quit)
 ```
 
 ## Usage
+
+### Create a Certificate signed by the remote CA
+
+```bash
+$ curl -H 'content-type: application/json' -d '{"key": {"algorithm": "dsa", "key_size": 2048}, "commonName": "foobar.com"}' sslapi.example.com:8888/v1/x509/cert
+```
+
+### Get the remote CA Certificate
+
+```bash
+$ curl sslapi.example.com:8888/v1/x509/ca
+```
+
+### Create a ECDSA key
+
+```bash
+$ curl -H 'content-type: application/json' -d '{"key": {"algorithm": "ecdsa", "curve": "secp521r1"}}' sslapi.example.com:8888/v1/key
+```
