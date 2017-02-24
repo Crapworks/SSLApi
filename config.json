@@ -1,0 +1,4 @@
+{
+    "ca_key": "ca-key.pem",
+    "ca_cert": "ca.pem"
+}
