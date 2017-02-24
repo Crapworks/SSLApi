@@ -10,22 +10,22 @@ Why building something new then? Well, I needed functionality that is not (yet) 
 
 1. Clone this repository
 
-```bash
-$ git clone https://github.com/Crapworks/SSLApi.git
-$ cd SSLApi
-```
+    ```bash
+    $ git clone https://github.com/Crapworks/SSLApi.git
+    $ cd SSLApi
+    ```
 
 2. Install the dependencies
 
-```bash
-$ pip inststall -r requirements.txt
-```
+    ```bash
+    $ pip inststall -r requirements.txt
+    ```
 
 3. Edit `example-ca-csr.json` (This will become your CA) and run the following command
 
-```bash
-$ ./sslapi.py --bootstrap example-ca-csr.json | ./api2file.py --prefix ca
-```
+    ```bash
+    $ ./sslapi.py --bootstrap example-ca-csr.json | ./api2file.py --prefix ca
+    ```
 
 4. Check `config.json` to see if the filenames are matching (if you used the exact command above they should match)
 
@@ -33,34 +33,34 @@ $ ./sslapi.py --bootstrap example-ca-csr.json | ./api2file.py --prefix ca
 
 6. Start it up!
 
-```bash
-$ ./sslapi.py
-```
+    ```bash
+    $ ./sslapi.py
+    ```
 
 7. Create your first certificate and key via SSLApi
 
-```bash
-$ cat mycert.json
-{
-    "key": {
-        "algorithm": "dsa", 
-        "key_size": 2048
-    }, 
-    "names":[
-        {"commonName": "foobar.com"}
-    ],
-    "extended_key_usage": ["serverAuth"],
-    "subject_alt_names": ["barfoo.com"]
-}
+    ```bash
+    $ cat mycert.json
+    {
+        "key": {
+            "algorithm": "dsa", 
+            "key_size": 2048
+        }, 
+        "names":[
+            {"commonName": "foobar.com"}
+        ],
+        "extended_key_usage": ["serverAuth"],
+        "subject_alt_names": ["barfoo.com"]
+    }
 
-$ curl -H 'content-type: application/json' -d@mycert.json localhost:8888/v1/x509/cert | ./api2file.py --prefix certfoo
-```
+    $ curl -H 'content-type: application/json' -d@mycert.json localhost:8888/v1/x509/cert | ./api2file.py --prefix certfoo
+    ```
 
 8. Verify that everything looks good:
 
-```bash
-$ openssl x509 -in certfoo.pem -text
-```
+    ```bash
+    $ openssl x509 -in certfoo.pem -text
+    ```
 
 9. Profit!!1
 
