@@ -54,6 +54,12 @@ class X509Key(object):
             if key not in parameter:
                 raise ParameterError('missing parameter for {0} key: {1}'.format(algorithm, key))
 
+    def _get_curve(self, name):
+        """Map curve names to EllipticCurve objects"""
+        if name not in ec._CURVE_TYPES:
+            raise ParameterError('unknown curve type: {}'.format(name))
+        return ec._CURVE_TYPES[name]
+
     def generate(self, algorithm, backend=default_backend, **parameter):
         """Generate a private key
 
@@ -77,6 +83,7 @@ class X509Key(object):
             primitive = dsa
         if algorithm.lower() == 'ecdsa':
             primitive = ec
+            parameter['curve'] = self._get_curve(parameter['curve'])
 
         self.key = primitive.generate_private_key(
             backend=backend(),
