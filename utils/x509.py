@@ -22,13 +22,31 @@ class ParameterError(Exception):
 
 
 class X509Key(object):
+    """Representation of a private key
+
+    Without any arguments this class just creates an empty instance. Provide a
+    PEM encoded private key and it will load and decrypt it (if ``password``
+    is provided as well).
+
+    Args:
+        pem (:obj:`str`, optional): The PEM encoded private key
+        password (:obj:`str`, optional): Password in case the PEM is enrypted
+        backend (:obj:`backend`, optional): Specify a backend to use
+    """
+
     algorithm_parameter = {
         'dsa': ['key_size'],
         'rsa': ['key_size', 'public_exponent'],
         'ecdsa': ['curve']
     }
 
+    def __init__(self, pem=None, password=None, backend=default_backend):
+        if pem:
+            self.key = serialization.load_pem_private_key(str(pem), password=password, backend=backend())
+
     def _validate_parameters(self, algorithm, **parameter):
+        """Validate key generation parameters"""
+
         for key in parameter:
             if key not in self.algorithm_parameter[algorithm]:
                 raise ParameterError('unkown parameter for {0} key: {1}'.format(algorithm, key))
@@ -36,11 +54,18 @@ class X509Key(object):
             if key not in parameter:
                 raise ParameterError('missing parameter for {0} key: {1}'.format(algorithm, key))
 
-    def __init__(self, pem=None, password=None, backend=default_backend):
-        if pem:
-            self.key = serialization.load_pem_private_key(str(pem), password=password, backend=backend())
-
     def generate(self, algorithm, backend=default_backend, **parameter):
+        """Generate a private key
+
+        Different algorithms need different parameters. DSA for example
+        just needs the ``key_size`` parameter, while ECDSA needs the ``curve``
+        parameter that specifies which elliptic curve algorithm should be used.
+
+        Args:
+            algorith (str): Algorith to use (dsa, rsa or ecdsa)
+            **parameter: key generation parameter
+        """
+
         if algorithm.lower() not in self.algorithm_parameter:
             raise ParameterError('unknown key algorithm: {0}'.format(algorithm.lower()))
 
@@ -60,6 +85,8 @@ class X509Key(object):
 
     @property
     def pem(self):
+        """str: Return PEM encoded unencryped key"""
+
         return self.key.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.TraditionalOpenSSL,
@@ -68,11 +95,37 @@ class X509Key(object):
 
 
 class X509CertReq(object):
+    """Representation of a X509 Certificate Signing Request
+
+    Without any arguments this class just creates an empty instance. Provide a
+    PEM encoded CSR and it will load and it.
+
+    Args:
+        pem (:obj:`str`, optional): The PEM encoded CSR
+        backend (:obj:`backend`, optional): Specify a backend to use
+    """
+
     def __init__(self, csr=None, backend=default_backend):
         if csr:
             self.request = x509.load_pem_x509_csr(str(csr), backend=backend())
 
     def generate(self, key, digest=hashes.SHA256(), backend=default_backend, name=[], extended_key_usage=[], subject_alt_names=[]):
+        """Generate a Certificate Signing Request (CSR)
+
+        The CSR needs to be signed by a private key using a digest (defaults
+        to SHA256). The ``name`` argument is a list of dictionaries in the
+        form of ``{"commonName": "foobar.com"}``  The names get mapped to
+        X509 OIDS. Short forms are not supported yet.
+
+        Args:
+            key (obj): Private key instance that signs the CSR
+            digest (:obj: `digest`, optional): Digest instance used for signing
+            backend (:obj:`backend`, optional): Specify a backend to use
+            name (:obj:`list`, optional): list of dict of X509 Subjects
+            extended_key_usage (:obj:`list`, optional): list of KeyUsage attributes
+            subject_alt_names (:obj:`list`, optional): list of SubjectAlternativeNames
+        """
+
         builder = x509.CertificateSigningRequestBuilder()
         builder = builder.subject_name(x509.Name(list(self._create_subject_name(name))))
 
@@ -91,6 +144,7 @@ class X509CertReq(object):
         )
 
     def _get_alt_name(self, alt_name):
+        """Get instances of X509 Names according to their type"""
         try:
             socket.inet_pton(socket.AF_INET, alt_name)
         except socket.error:
@@ -99,27 +153,54 @@ class X509CertReq(object):
             return x509.IPAddress(ipaddress.IPv4Address(unicode(alt_name)))
 
     def _create_subject_name(self, name):
+        """Get list of X509 NameAttributes"""
         for subject in name:
             for key, value in subject.iteritems():
                 yield x509.NameAttribute(self._get_oid(key), unicode(value))
 
     def _get_oid(self, name):
+        """Map names to corresonding OID attributes"""
         oid_mapping = {v: k for k, v in _OID_NAMES.iteritems()}
         return oid_mapping[name]
 
     @property
     def pem(self):
+        """str: PEM encoded CSR"""
         return self.request.public_bytes(
             encoding=serialization.Encoding.PEM,
         )
 
 
 class X509Cert(object):
+    """Representation of a X509 Certificate
+
+    Without any arguments this class just creates an empty instance. Provide a
+    PEM encoded Certificate and it will load and it.
+
+    Args:
+        pem (:obj:`str`, optional): The PEM encoded Certificate
+        backend (:obj:`backend`, optional): Specify a backend to use
+    """
+
     def __init__(self, cert=None, backend=default_backend):
         if cert:
             cert = x509.load_pem_x509_certificate(str(cert), backend=backend())
 
     def generate(self, issuerKey, issuerCert, req, days=365, digest=hashes.SHA256(), backend=default_backend):
+        """Generate a Certificate
+
+        This will sign a CSR with the provided IssuerKey and Issuer Cert.
+        There are some constraints that are set by default, like CA=False.
+
+        Args:
+            issuerKey (obj): Private that should sign the Certificate
+            issuerCert (obj): Issuer Certificate
+            rew (obj): Certificate Signing Request to sign
+            days (:obj:`int`, optinal): Number of days before the certificate expires
+            digest (:obj: `digest`, optional): Digest instance used for signing
+            backend (:obj:`backend`, optional): Specify a backend to use
+        """
+
         builder = x509.CertificateBuilder()
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.not_valid_before(datetime.datetime.utcnow())
@@ -155,6 +236,7 @@ class X509Cert(object):
 
     @property
     def pem(self):
+        """str: PEM encoded Certificate"""
         return self.cert.public_bytes(
             encoding=serialization.Encoding.PEM,
         )
