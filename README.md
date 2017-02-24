@@ -33,7 +33,7 @@ That is planned in case I get really bored:
 
 ## Requirements
 
-You just need [Flask]() and [Cryptography]():
+You just need [Flask](http://flask.pocoo.org) and [Cryptography](https://cryptography.io):
 ```bash
 $ pip install -r requirements.txt
 ```
