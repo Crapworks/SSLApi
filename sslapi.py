@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
+import sys
+import json
 import argparse
 
 from app import create_app
+from app.base import BootstrapCA
 
 app = create_app()
 
@@ -16,4 +20,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    app.run(host=args.bind, port=args.port, debug=args.debug)
+    if args.bootstrap:
+        bootstrap = BootstrapCA(args.bootstrap)
+        print('* generating ca from {}...'.format(args.bootstrap), file=sys.stderr)
+        print(json.dumps(bootstrap.generate()))
+    else:
+        app.run(host=args.bind, port=args.port, debug=args.debug)

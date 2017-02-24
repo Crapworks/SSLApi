@@ -1,0 +1,17 @@
+{
+  "commonName": "Example CA",
+  "key": {
+    "algorithm": "rsa",
+    "key_size": 2048,
+    "public_exponent": 65537
+  },
+  "names": [
+    {
+      "countryName": "DE",
+      "localityName": "Whereever",
+      "organizationName": "Crapworks",
+      "organizationalUnitName": "Code Monkeys",
+      "stateOrProvinceName": "Whatever"
+    }
+  ]
+}

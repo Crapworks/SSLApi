@@ -193,17 +193,17 @@ class X509Cert(object):
         if cert:
             self.cert = x509.load_pem_x509_certificate(str(cert), backend=backend())
 
-    def generate(self, issuerKey, issuerCert, req, days=365, digest=hashes.SHA256(), backend=default_backend):
+    def generate(self, issuerKey, issuerCert, req, days=365, ca=False, digest=hashes.SHA256(), backend=default_backend):
         """Generate a Certificate
 
         This will sign a CSR with the provided IssuerKey and Issuer Cert.
-        There are some constraints that are set by default, like CA=False.
 
         Args:
-            issuerKey (obj): Private that should sign the Certificate
-            issuerCert (obj): Issuer Certificate
+            issuerKey (obj): Private that should sign the certificate
+            issuerCert (obj): Issuer certificate
             rew (obj): Certificate Signing Request to sign
             days (:obj:`int`, optinal): Number of days before the certificate expires
+            ca (:obj:`bool`, optinal): Weather or not to create a CA certificate
             digest (:obj: `digest`, optional): Digest instance used for signing
             backend (:obj:`backend`, optional): Specify a backend to use
         """
@@ -216,18 +216,18 @@ class X509Cert(object):
         for extension in req.extensions:
             builder = builder.add_extension(extension.value, extension.critical)
 
-        builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        builder = builder.add_extension(x509.BasicConstraints(ca=ca, path_length=2 if ca else None), critical=True)
         builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(req.public_key()), critical=False)
         builder = builder.add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(issuerKey.public_key()), critical=False)
         builder = builder.add_extension(
             x509.KeyUsage(
-                digital_signature=True,
+                digital_signature=False if ca else True,
                 content_commitment=False,
-                key_encipherment=True,
+                key_encipherment=False if ca else True,
                 data_encipherment=False,
                 key_agreement=False,
-                key_cert_sign=False,
-                crl_sign=False,
+                key_cert_sign=ca,
+                crl_sign=ca,
                 encipher_only=False,
                 decipher_only=False
             ), critical=True,
