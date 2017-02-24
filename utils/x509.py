@@ -184,7 +184,7 @@ class X509Cert(object):
 
     def __init__(self, cert=None, backend=default_backend):
         if cert:
-            cert = x509.load_pem_x509_certificate(str(cert), backend=backend())
+            self.cert = x509.load_pem_x509_certificate(str(cert), backend=backend())
 
     def generate(self, issuerKey, issuerCert, req, days=365, digest=hashes.SHA256(), backend=default_backend):
         """Generate a Certificate
