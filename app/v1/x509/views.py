@@ -82,21 +82,21 @@ class X509Resource(ApiResource):
             req = X509CertReq()
             req.generate(
                 key=key.key,
-                name=data.get('name', []),
+                name=data.get('names', []),
                 extended_key_usage=data.get('extended_key_usage', []),
-                subject_alt_names=data.get('subject_alt_name', []),
+                subject_alt_names=data.get('subject_alt_names', []),
             )
             result['csr'] = req.pem
 
         if component == 'selfsigned':
             cert = X509Cert()
             cert.generate(issuerKey=key.key, issuerCert=False, req=req.request)
-            result['cert'] = cert.pem
+            result['certificate'] = cert.pem
 
         if component == 'cert':
             ca_cert, ca_key = self._load_ca()
             cert = X509Cert()
             cert.generate(issuerKey=ca_key.key, issuerCert=ca_cert.cert, req=req.request)
-            result['cert'] = cert.pem
+            result['certificate'] = cert.pem
 
         return jsonify(result)

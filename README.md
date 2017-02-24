@@ -6,6 +6,64 @@ First of all: If you want an Api for singing and creating certificates, please b
 
 Why building something new then? Well, I needed functionality that is not (yet) in CFSSL. Currently it is impossible to create certificates with multiple Organizations or OrganizationlaUnits. Since I really needed that feature and because I really like writing stuff in python, I decided to get into cryptography 'n stuff.
 
+## Quickstart
+
+1. Clone this repository
+
+```bash
+$ git clone https://github.com/Crapworks/SSLApi.git
+$ cd SSLApi
+```
+
+2. Install the dependencies
+
+```bash
+$ pip inststall -r requirements.txt
+```
+
+3. Edit `example-ca-csr.json` (This will become your CA) and run the following command
+
+```bash
+$ ./sslapi.py --bootstrap example-ca-csr.json | ./api2file.py --prefix ca
+```
+
+4. Check `config.json` to see if the filenames are matching (if you used the exact command above they should match)
+
+5. Of course you can use your own CA if you already have one. Just enter the path to your CA certificate and key into `config.json` and make sure these files are readable for the user you want SSLApi to run under
+
+6. Start it up!
+
+```bash
+$ ./sslapi.py
+```
+
+7. Create your first certificate and key via SSLApi
+
+```bash
+$ cat mycert.json
+{
+    "key": {
+        "algorithm": "dsa", 
+        "key_size": 2048
+    }, 
+    "names":[
+        {"commonName": "foobar.com"}
+    ],
+    "extended_key_usage": ["serverAuth"],
+    "subject_alt_names": ["barfoo.com"]
+}
+
+$ curl -H 'content-type: application/json' -d@mycert.json localhost:8888/v1/x509/cert | ./api2file.py --prefix certfoo
+```
+
+8. Verify that everything looks good:
+
+```bash
+$ openssl x509 -in certfoo.pem -text
+```
+
+9. Profit!!1
+
 ## What can it do for me right now?
 
 Right now you can use SSLApi to:
@@ -14,6 +72,7 @@ Right now you can use SSLApi to:
 * Create fully customizable Certificate Signing Requests (CSR)
 * Create self-signed certificates
 * Create a CA signed certificate/key bundle with one api call
+* Bootstrap CA to sign with
 * Sign you own CSR via the remote CA
 * Get the remote CA certificate
 
@@ -21,7 +80,6 @@ Right now you can use SSLApi to:
 
 That is planned for the nearest future in case my time management doesn't suck to hard:
 
-* Bootstrap CA on first start
 * Save generated certificates in a SQL backend (SQLalchemy)
 * Get stored certificates from SQL Backend via serial or subject
 * Some (good and usefull) kind of authentication
@@ -49,20 +107,4 @@ $ ./sslapi.py
 
 ## Usage
 
-### Create a Certificate signed by the remote CA
-
-```bash
-$ curl -H 'content-type: application/json' -d '{"key": {"algorithm": "dsa", "key_size": 2048}, "commonName": "foobar.com"}' sslapi.example.com:8888/v1/x509/cert
-```
-
-### Get the remote CA Certificate
-
-```bash
-$ curl sslapi.example.com:8888/v1/x509/ca
-```
-
-### Create a ECDSA key
-
-```bash
-$ curl -H 'content-type: application/json' -d '{"key": {"algorithm": "ecdsa", "curve": "secp521r1"}}' sslapi.example.com:8888/v1/key
-```
+TBD
