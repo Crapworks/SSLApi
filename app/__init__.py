@@ -44,7 +44,7 @@ def make_json_error(ex):
     return response
 
 
-def create_app():
+def create_app(config):
     app = Flask(__name__)
     app.template_folder = join(dirname(__file__), 'templates')
     app.static_folder = join(dirname(__file__), 'static')
@@ -52,9 +52,7 @@ def create_app():
     for code in default_exceptions.iterkeys():
         app.register_error_handler(code, make_json_error)
 
-    app.config['USER_CONFIG'] = Config(
-        join(dirname(dirname(__file__)), 'config.json')
-    )
+    app.config['USER_CONFIG'] = Config(config)
     app.register_blueprint(X509ResourceV1.as_blueprint(), url_prefix='/v1/x509')
     app.register_blueprint(KeyResourceV1.as_blueprint(), url_prefix='/v1/key')
 
