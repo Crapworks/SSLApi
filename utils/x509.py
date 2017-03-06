@@ -116,7 +116,7 @@ class X509CertReq(object):
         if csr:
             self.request = x509.load_pem_x509_csr(str(csr), backend=backend())
 
-    def generate(self, key, digest=hashes.SHA256(), backend=default_backend, name=[], extended_key_usage=[], subject_alt_names=[]):
+    def generate(self, key, profile, digest=hashes.SHA256(), backend=default_backend, name=[], subject_alt_names=[]):
         """Generate a Certificate Signing Request (CSR)
 
         The CSR needs to be signed by a private key using a digest (defaults
@@ -126,25 +126,37 @@ class X509CertReq(object):
 
         Args:
             key (obj): Private key instance that signs the CSR
+            profile (dict): profile dictionary defining certificate options
             digest (:obj: `digest`, optional): Digest instance used for signing
             backend (:obj:`backend`, optional): Specify a backend to use
             name (:obj:`list`, optional): list of dict of X509 Subjects
-            extended_key_usage (:obj:`list`, optional): list of KeyUsage attributes
             subject_alt_names (:obj:`list`, optional): list of SubjectAlternativeNames
         """
 
         builder = x509.CertificateSigningRequestBuilder()
         builder = builder.subject_name(x509.Name(list(self._create_subject_name(name))))
 
-        if extended_key_usage:
+        if 'extended_key_usage' in profile:
             builder = builder.add_extension(
-                x509.ExtendedKeyUsage([self._get_oid(usage) for usage in extended_key_usage]), critical=False,
+                x509.ExtendedKeyUsage([self._get_oid(usage) for usage in profile['extended_key_usage']]), critical=False,
             )
 
         if subject_alt_names:
             builder = builder.add_extension(
                 x509.SubjectAlternativeName([self._get_alt_name(alt) for alt in subject_alt_names]), critical=False,
             )
+
+        constraints = {'ca': False, 'path_length': None}
+        constraints.update(profile.get('basic_constraints', {}))
+        builder = builder.add_extension(x509.BasicConstraints(**constraints), critical=True)
+
+        usage = [
+            'digital_signature', 'content_commitment', 'key_encipherment', 'data_encipherment',
+            'key_agreement', 'key_cert_sign', 'crl_sign', 'encipher_only', 'decipher_only'
+        ]
+        usage = dict.fromkeys(usage, False)
+        usage.update(dict.fromkeys(profile.get('key_usage', []), True))
+        builder = builder.add_extension(x509.KeyUsage(**usage), critical=True)
 
         self.request = builder.sign(
             key, digest, backend()
@@ -193,7 +205,7 @@ class X509Cert(object):
         if cert:
             self.cert = x509.load_pem_x509_certificate(str(cert), backend=backend())
 
-    def generate(self, issuerKey, issuerCert, req, days=365, ca=False, digest=hashes.SHA256(), backend=default_backend):
+    def generate(self, issuerKey, issuerCert, req, days=365, digest=hashes.SHA256(), backend=default_backend):
         """Generate a Certificate
 
         This will sign a CSR with the provided IssuerKey and Issuer Cert.
@@ -201,9 +213,8 @@ class X509Cert(object):
         Args:
             issuerKey (obj): Private that should sign the certificate
             issuerCert (obj): Issuer certificate
-            rew (obj): Certificate Signing Request to sign
+            req (obj): Certificate Signing Request to sign
             days (:obj:`int`, optinal): Number of days before the certificate expires
-            ca (:obj:`bool`, optinal): Weather or not to create a CA certificate
             digest (:obj: `digest`, optional): Digest instance used for signing
             backend (:obj:`backend`, optional): Specify a backend to use
         """
@@ -216,22 +227,8 @@ class X509Cert(object):
         for extension in req.extensions:
             builder = builder.add_extension(extension.value, extension.critical)
 
-        builder = builder.add_extension(x509.BasicConstraints(ca=ca, path_length=2 if ca else None), critical=True)
         builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(req.public_key()), critical=False)
         builder = builder.add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(issuerKey.public_key()), critical=False)
-        builder = builder.add_extension(
-            x509.KeyUsage(
-                digital_signature=False if ca else True,
-                content_commitment=False,
-                key_encipherment=False if ca else True,
-                data_encipherment=False,
-                key_agreement=False,
-                key_cert_sign=ca,
-                crl_sign=ca,
-                encipher_only=False,
-                decipher_only=False
-            ), critical=True,
-        )
         builder = builder.subject_name(req.subject)
         builder = builder.public_key(req.public_key())
 

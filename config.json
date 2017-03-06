@@ -1,4 +1,52 @@
 {
     "ca_key": "ca-key.pem",
-    "ca_cert": "ca.pem"
+    "ca_cert": "ca.pem",
+    "profiles": {
+        "client": {
+            "expiry": 356,
+            "key_usage": [
+                "key_encipherment",
+                "digital_signature"
+            ],
+            "extended_key_usage": [
+                "clientAuth"
+            ],
+            "basic_constraints": {
+                "ca": false,
+                "path_length": null
+            }
+        },
+        "server": {
+            "expiry": 356,
+            "key_usage": [
+                "key_encipherment",
+                "digital_signature"
+            ],
+            "extended_key_usage": [
+                "serverAuth"
+            ],
+            "basic_constraints": {
+                "ca": false,
+                "path_length": null
+            }
+        },
+        "ca": {
+            "auth_key": "ca-auth",
+            "expiry": 3560,
+            "key_usage": [
+                "key_cert_sign",
+                "crl_sign"
+            ],
+            "basic_constraints": {
+                "ca": true,
+                "path_length": 2
+            }
+        }
+    },
+    "auth_keys": {
+        "ca-auth": {
+            "type": "plain",
+            "key": "347ebc03-c9ff-4200-8466-56ebe8254474"
+        }
+    }
 }

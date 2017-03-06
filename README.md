@@ -42,6 +42,7 @@ Why building something new then? Well, I needed functionality that is not (yet) 
     ```bash
     $ cat mycert.json
     {
+        "profile": "server",
         "key": {
             "algorithm": "dsa", 
             "key_size": 2048
@@ -75,6 +76,8 @@ Right now you can use SSLApi to:
 * Bootstrap CA to sign with
 * Sign you own CSR via the remote CA
 * Get the remote CA certificate
+* Server side profiles
+* (Very) simple, token based authentication
 
 ## Whats planned for it?
 
@@ -82,12 +85,11 @@ That is planned for the nearest future in case my time management doesn't suck t
 
 * Save generated certificates in a SQL backend (SQLalchemy)
 * Get stored certificates from SQL Backend via serial or subject
-* Some (good and usefull) kind of authentication
 
 That is planned in case I get really bored:
 * Certificate Revocation Lists (CRL)
 * Support multiple CAs
-* Server side profiles
+* JWT authentication support
 
 ## Requirements
 
