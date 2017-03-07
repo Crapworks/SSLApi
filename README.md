@@ -50,7 +50,6 @@ Why building something new then? Well, I needed functionality that is not (yet) 
         "names":[
             {"commonName": "foobar.com"}
         ],
-        "extended_key_usage": ["serverAuth"],
         "subject_alt_names": ["barfoo.com"]
     }
 
